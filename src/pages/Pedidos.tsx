@@ -1,21 +1,85 @@
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DB_PEDIDOS, getPatientById } from '@/data/mockData';
+import { DB_PEDIDOS, DB_PATIENTS, getPatientById, type Request } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { FileText, Calendar, AlertCircle, CheckCircle2, Upload, Plus, Building2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Pedidos() {
   const { user } = useAuth();
+  const [selectedPatient, setSelectedPatient] = useState<string>('');
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [cidade, setCidade] = useState('');
+  const [showLabs, setShowLabs] = useState(false);
+  const [selectedLab, setSelectedLab] = useState('');
   
   const userRequests = user?.patientId 
     ? DB_PEDIDOS.filter(p => p.consultaAlvoId === user.patientId)
+    : selectedPatient
+    ? DB_PEDIDOS.filter(p => p.consultaAlvoId === selectedPatient)
     : DB_PEDIDOS;
 
   const pending = userRequests.filter(r => r.estado === 'por_fazer');
   const completed = userRequests.filter(r => r.estado === 'concluido');
   const expired = userRequests.filter(r => r.estado === 'expirado');
+
+  // Mock labs data
+  const labs = [
+    { id: '1', nome: 'Germano de Sousa', endereco: 'Av. da Liberdade, 123', url: 'https://www.germanodesousa.com' },
+    { id: '2', nome: 'Synlab', endereco: 'Rua do Comércio, 45', url: 'https://www.synlab.pt' },
+    { id: '3', nome: 'Joaquim Chaves Saúde', endereco: 'Praça de Espanha, 78', url: 'https://www.jcs.pt' }
+  ];
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>, requestId?: string) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      toast.success(`Documento "${file.name}" carregado com sucesso!`);
+    }
+  };
+
+  const handleSchedule = (request: Request) => {
+    setSelectedRequest(request);
+    setIsScheduleModalOpen(true);
+    setCidade('');
+    setShowLabs(false);
+    setSelectedLab('');
+  };
+
+  const procurarLabs = () => {
+    if (!cidade.trim()) {
+      toast.error('Por favor, insira uma cidade');
+      return;
+    }
+    setShowLabs(true);
+  };
+
+  const confirmarAgendamento = () => {
+    if (!selectedLab) {
+      toast.error('Por favor, selecione um laboratório');
+      return;
+    }
+    const lab = labs.find(l => l.id === selectedLab);
+    toast.success(`Agendamento confirmado em ${lab?.nome}!`);
+    window.open(lab?.url, '_blank');
+    setIsScheduleModalOpen(false);
+  };
+
+  const handleCreateRequest = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    toast.success(`Pedido de ${formData.get('tipo')} criado com sucesso!`);
+    setIsCreateModalOpen(false);
+  };
 
   const getStatusIcon = (estado: string) => {
     switch (estado) {
@@ -62,7 +126,7 @@ export default function Pedidos() {
             {getStatusBadge(request.estado)}
           </div>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="font-medium">Tipo:</span>
             <span className="capitalize">{request.tipo}</span>
@@ -87,6 +151,26 @@ export default function Pedidos() {
               </span>
             </div>
           )}
+          
+          {request.estado === 'por_fazer' && (
+            <div className="flex gap-2 mt-4 pt-3 border-t">
+              <Input
+                type="file"
+                id={`fileUpload-${request.id}`}
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="hidden"
+                onChange={(e) => handleUpload(e, request.id)}
+              />
+              <Button size="sm" onClick={() => document.getElementById(`fileUpload-${request.id}`)?.click()}>
+                <Upload className="h-4 w-4 mr-1" />
+                Upload
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleSchedule(request)}>
+                <Calendar className="h-4 w-4 mr-1" />
+                Agendar
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -103,8 +187,98 @@ export default function Pedidos() {
               Pedidos & Exames
             </h1>
             <p className="text-muted-foreground mt-2">
-              Gestão completa de pedidos e exames médicos
+              {user?.role === 'utente' 
+                ? 'Aceda aos pedidos associados à sua consulta' 
+                : 'Gerir pedidos e exames dos utentes'}
             </p>
+          </div>
+
+          {/* Actions bar */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Input
+              type="file"
+              id="fileUploadGeneral"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={(e) => handleUpload(e)}
+            />
+            <Button onClick={() => document.getElementById('fileUploadGeneral')?.click()}>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Documento
+            </Button>
+
+            {user?.role === 'medico' && (
+              <>
+                <Select value={selectedPatient} onValueChange={setSelectedPatient}>
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue placeholder="Todos os utentes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos os utentes</SelectItem>
+                    {DB_PATIENTS.map(patient => (
+                      <SelectItem key={patient.id} value={patient.id}>
+                        {patient.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Criar Pedido
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Criar Novo Pedido</DialogTitle>
+                      <DialogDescription>
+                        Preencha os dados para criar um novo pedido de exame ou análise
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateRequest} className="space-y-4">
+                      <div>
+                        <Label htmlFor="tipo">Tipo</Label>
+                        <Select name="tipo" required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="analise">Análise</SelectItem>
+                            <SelectItem value="exame">Exame</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="nome">Nome do Exame/Análise</Label>
+                        <Input name="nome" required placeholder="ex: Hemograma completo" />
+                      </div>
+                      <div>
+                        <Label htmlFor="descricao">Descrição</Label>
+                        <Input name="descricao" placeholder="Instruções adicionais" />
+                      </div>
+                      <div>
+                        <Label htmlFor="patientId">Utente</Label>
+                        <Select name="patientId" required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o utente" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DB_PATIENTS.map(patient => (
+                              <SelectItem key={patient.id} value={patient.id}>
+                                {patient.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button type="submit" className="w-full">Criar Pedido</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
           </div>
 
           <Tabs defaultValue="pending" className="space-y-6">
@@ -179,6 +353,76 @@ export default function Pedidos() {
           </Tabs>
         </div>
       </main>
+
+      {/* Schedule Modal */}
+      <Dialog open={isScheduleModalOpen} onOpenChange={setIsScheduleModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Agendar Exame</DialogTitle>
+            <DialogDescription>
+              Procure laboratórios disponíveis na sua cidade
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedRequest && (
+            <div className="bg-muted p-3 rounded-lg mb-4">
+              <p className="font-semibold">{selectedRequest.nome}</p>
+              <p className="text-sm text-muted-foreground">{selectedRequest.descricao}</p>
+            </div>
+          )}
+
+          {!showLabs ? (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="cidade">Cidade</Label>
+                <Input
+                  id="cidade"
+                  placeholder="ex: Lisboa"
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && procurarLabs()}
+                />
+              </div>
+              <Button onClick={procurarLabs} className="w-full">
+                Procurar Laboratórios
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm">Laboratórios disponíveis em <strong>{cidade}</strong>:</p>
+              
+              <div className="space-y-2">
+                {labs.map(lab => (
+                  <Card 
+                    key={lab.id} 
+                    className={`cursor-pointer transition-all ${selectedLab === lab.id ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => setSelectedLab(lab.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <Building2 className="h-5 w-5 text-primary mt-1" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{lab.nome}</h4>
+                          <p className="text-sm text-muted-foreground">{lab.endereco}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <Button onClick={confirmarAgendamento} className="flex-1">
+                  Agendar e visitar site
+                </Button>
+                <Button variant="outline" onClick={() => setShowLabs(false)} className="flex-1">
+                  Voltar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
