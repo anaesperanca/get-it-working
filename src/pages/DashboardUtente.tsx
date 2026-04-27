@@ -28,7 +28,7 @@ export default function DashboardUtente() {
   void updateKey;
   const requests = getRequestsByPatient(user?.patientId || '');
   
-  const pending = requests.filter(r => r.estado === 'por_fazer').length;
+  const pending = requests.filter(r => r.estado === 'por_fazer' || r.estado === 'agendado').length;
   const completed = requests.filter(r => r.estado === 'concluido').length;
   const expired = requests.filter(r => r.estado === 'expirado').length;
   const progress = requests.length > 0 ? (completed / requests.length) * 100 : 0;
@@ -181,6 +181,8 @@ export default function DashboardUtente() {
                           >
                             {request.estado === 'por_fazer'
                               ? 'Pendente'
+                              : request.estado === 'agendado'
+                              ? 'Agendado'
                               : request.estado === 'concluido'
                               ? 'Concluído'
                               : 'Expirado'}
