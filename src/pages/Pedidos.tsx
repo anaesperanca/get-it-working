@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { FileText, Calendar, AlertCircle, CheckCircle2, Upload, Plus, Building2, Clock, RotateCw } from 'lucide-react';
+import { FileText, Calendar, AlertCircle, CheckCircle2, Upload, Plus, Building2, Clock, RotateCw, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Pedidos() {
@@ -142,6 +142,19 @@ export default function Pedidos() {
     toast.success(`Pedido de renovação enviado para ${request.nome}. Novo prazo atribuído.`);
   };
 
+  const handleDownloadDocument = (request: Request) => {
+    const submittedFile = request.anexos[0] || `${request.nome.replace(/\s+/g, '_').toLowerCase()}_resultado.pdf`;
+    const content = `My São João\n\nDocumento submetido\nExame: ${request.nome}\nData: ${new Date(request.dataRealizacao || Date.now()).toLocaleDateString('pt-PT')}\nFicheiro original: ${submittedFile}\n`;
+    const blob = new Blob([content], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = submittedFile.endsWith('.pdf') ? submittedFile : `${submittedFile}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Download iniciado: ${link.download}`);
+  };
+
   const handleCreateRequest = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -262,6 +275,15 @@ export default function Pedidos() {
               <Button size="sm" variant="outline" onClick={() => handleRenewRequest(request)}>
                 <RotateCw className="h-4 w-4 mr-1" />
                 Pedir renovação
+              </Button>
+            </div>
+          )}
+
+          {request.estado === 'concluido' && (
+            <div className="flex gap-2 mt-4 pt-3 border-t">
+              <Button size="sm" variant="outline" onClick={() => handleDownloadDocument(request)}>
+                <Download className="h-4 w-4 mr-1" />
+                Download documento
               </Button>
             </div>
           )}
