@@ -141,6 +141,8 @@ export default function Pedidos() {
     switch (estado) {
       case 'por_fazer':
         return <Calendar className="h-5 w-5 text-warning" />;
+      case 'agendado':
+        return <Clock className="h-5 w-5 text-primary" />;
       case 'concluido':
         return <CheckCircle2 className="h-5 w-5 text-success" />;
       case 'expirado':
@@ -154,6 +156,8 @@ export default function Pedidos() {
     switch (estado) {
       case 'por_fazer':
         return <Badge variant="outline" className="bg-warning/10 text-warning border-warning">Pendente</Badge>;
+      case 'agendado':
+        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary">Agendado</Badge>;
       case 'concluido':
         return <Badge variant="outline" className="bg-success/10 text-success border-success">Concluído</Badge>;
       case 'expirado':
@@ -207,8 +211,14 @@ export default function Pedidos() {
               </span>
             </div>
           )}
+          {request.agendamento && (
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <Clock className="h-4 w-4" />
+              <span>Agendado: {request.agendamento}</span>
+            </div>
+          )}
           
-          {request.estado === 'por_fazer' && (
+          {(request.estado === 'por_fazer' || request.estado === 'agendado') && (
             <div className="flex gap-2 mt-4 pt-3 border-t">
               <Input
                 type="file"
@@ -221,10 +231,17 @@ export default function Pedidos() {
                 <Upload className="h-4 w-4 mr-1" />
                 Upload
               </Button>
-              <Button size="sm" variant="outline" onClick={() => handleSchedule(request)}>
-                <Calendar className="h-4 w-4 mr-1" />
-                Agendar
-              </Button>
+              {request.estado === 'por_fazer' ? (
+                <Button size="sm" variant="outline" onClick={() => handleSchedule(request)}>
+                  <Calendar className="h-4 w-4 mr-1" />
+                  Agendar
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" disabled>
+                  <Clock className="h-4 w-4 mr-1" />
+                  Agendado
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
