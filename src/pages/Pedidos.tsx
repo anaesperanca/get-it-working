@@ -408,14 +408,17 @@ export default function Pedidos() {
           {!showLabs ? (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="cidade">Cidade</Label>
-                <Input
-                  id="cidade"
-                  placeholder="ex: Lisboa"
-                  value={cidade}
-                  onChange={(e) => setCidade(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && procurarLabs()}
-                />
+                <Label htmlFor="distrito">Distrito</Label>
+                <Select value={distrito} onValueChange={setDistrito}>
+                  <SelectTrigger id="distrito">
+                    <SelectValue placeholder="Selecione um distrito" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {distritosPortugal.map(item => (
+                      <SelectItem key={item} value={item}>{item}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <Button onClick={procurarLabs} className="w-full">
                 Procurar Laboratórios
@@ -423,21 +426,45 @@ export default function Pedidos() {
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm">Laboratórios disponíveis em <strong>{cidade}</strong>:</p>
+              <p className="text-sm">Laboratórios disponíveis no distrito de <strong>{distrito}</strong>:</p>
               
               <div className="space-y-2">
-                {labs.map(lab => (
+                {availableLabs.map(lab => (
                   <Card 
                     key={lab.id} 
                     className={`cursor-pointer transition-all ${selectedLab === lab.id ? 'ring-2 ring-primary' : ''}`}
-                    onClick={() => setSelectedLab(lab.id)}
+                    onClick={() => {
+                      setSelectedLab(lab.id);
+                      setSelectedSlot(lab.id === 'synlab' ? synlabAgenda[0]?.id || '' : '');
+                    }}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         <Building2 className="h-5 w-5 text-primary mt-1" />
                         <div className="flex-1">
-                          <h4 className="font-semibold">{lab.nome}</h4>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-semibold">{lab.nome}</h4>
+                            {lab.api && <Badge variant="secondary">API agenda</Badge>}
+                          </div>
                           <p className="text-sm text-muted-foreground">{lab.endereco}</p>
+                          {lab.id === 'synlab' && selectedLab === 'synlab' && (
+                            <div className="mt-3 grid gap-2">
+                              {synlabAgenda.map(slot => (
+                                <button
+                                  key={slot.id}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedSlot(slot.id);
+                                  }}
+                                  className={`flex items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors ${selectedSlot === slot.id ? 'border-primary bg-primary/10' : 'border-border bg-background'}`}
+                                >
+                                  <span>{slot.local}</span>
+                                  <span className="flex items-center gap-1 font-medium"><Clock className="h-4 w-4" />{slot.label} · {slot.hora}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
