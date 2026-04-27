@@ -1,4 +1,4 @@
-// Mock database for SNS24
+// Mock database for My São João
 
 function addDays(n: number): string {
   const d = new Date();
@@ -115,7 +115,7 @@ export const DB_PEDIDOS: Request[] = [
   }
 ];
 
-const STORAGE_KEY = 'sns24_pedidos_state';
+const STORAGE_KEY = 'my_sao_joao_pedidos_state';
 
 export const getPedidos = (): Request[] => {
   if (typeof window === 'undefined') return DB_PEDIDOS;
