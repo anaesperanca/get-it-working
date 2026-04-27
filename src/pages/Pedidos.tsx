@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DB_PEDIDOS, DB_PATIENTS, getPatientById, type Request } from '@/data/mockData';
+import { DB_PATIENTS, getPatientById, getPedidos, updatePedidoLocal, type Request } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -23,16 +23,19 @@ export default function Pedidos() {
   const [showLabs, setShowLabs] = useState(false);
   const [selectedLab, setSelectedLab] = useState('');
   const [selectedSlot, setSelectedSlot] = useState('');
+  const [requests, setRequests] = useState<Request[]>(() => getPedidos());
   
   const userRequests = user?.patientId 
-    ? DB_PEDIDOS.filter(p => p.consultaAlvoId === user.patientId)
+    ? requests.filter(p => p.consultaAlvoId === user.patientId)
     : selectedPatient
-    ? DB_PEDIDOS.filter(p => p.consultaAlvoId === selectedPatient)
-    : DB_PEDIDOS;
+    ? requests.filter(p => p.consultaAlvoId === selectedPatient)
+    : requests;
 
-  const pending = userRequests.filter(r => r.estado === 'por_fazer');
+  const pending = userRequests.filter(r => r.estado === 'por_fazer' || r.estado === 'agendado');
   const completed = userRequests.filter(r => r.estado === 'concluido');
   const expired = userRequests.filter(r => r.estado === 'expirado');
+
+  const refreshRequests = () => setRequests(getPedidos());
 
   const distritosPortugal = [
     'Aveiro', 'Beja', 'Braga', 'Bragança', 'Castelo Branco', 'Coimbra', 'Évora', 'Faro', 'Guarda',
@@ -65,6 +68,16 @@ export default function Pedidos() {
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>, requestId?: string) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (requestId) {
+        updatePedidoLocal(requestId, {
+          estado: 'concluido',
+          dataRealizacao: new Date().toISOString(),
+          anexos: [file.name],
+        });
+        refreshRequests();
+        toast.success(`Documento "${file.name}" carregado. Exame concluído e progresso atualizado!`);
+        return;
+      }
       toast.success(`Documento "${file.name}" carregado com sucesso!`);
     }
   };
@@ -105,6 +118,15 @@ export default function Pedidos() {
         ? `Agendamento Synlab confirmado: ${slot?.label} às ${slot?.hora}`
         : `Agendamento confirmado em ${lab?.nome}!`
     );
+    if (selectedRequest) {
+      updatePedidoLocal(selectedRequest.id, {
+        estado: 'agendado',
+        agendamento: selectedLab === 'synlab'
+          ? `${slot?.local} · ${slot?.label} às ${slot?.hora}`
+          : lab?.nome,
+      });
+      refreshRequests();
+    }
     setIsScheduleModalOpen(false);
   };
 
@@ -141,7 +163,7 @@ export default function Pedidos() {
     }
   };
 
-  const RequestCard = ({ request }: { request: typeof DB_PEDIDOS[0] }) => {
+  const RequestCard = ({ request }: { request: Request }) => {
     const patient = getPatientById(request.consultaAlvoId);
     
     return (
