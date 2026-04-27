@@ -7,15 +7,28 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 export default function DashboardUtente() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [updateKey, setUpdateKey] = useState(0);
+  
+  useEffect(() => {
+    const refresh = () => setUpdateKey(key => key + 1);
+    window.addEventListener('pedidos-updated', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('pedidos-updated', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
   
   const patient = getPatientById(user?.patientId || '');
+  void updateKey;
   const requests = getRequestsByPatient(user?.patientId || '');
   
-  const pending = requests.filter(r => r.estado === 'por_fazer').length;
+  const pending = requests.filter(r => r.estado === 'por_fazer' || r.estado === 'agendado').length;
   const completed = requests.filter(r => r.estado === 'concluido').length;
   const expired = requests.filter(r => r.estado === 'expirado').length;
   const progress = requests.length > 0 ? (completed / requests.length) * 100 : 0;
@@ -168,6 +181,8 @@ export default function DashboardUtente() {
                           >
                             {request.estado === 'por_fazer'
                               ? 'Pendente'
+                              : request.estado === 'agendado'
+                              ? 'Agendado'
                               : request.estado === 'concluido'
                               ? 'Concluído'
                               : 'Expirado'}
