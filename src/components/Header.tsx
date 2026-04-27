@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Activity } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import mySaoJoaoLogo from '@/assets/my-sao-joao-logo.png';
 
 export const Header = () => {
   const { user, logout } = useAuth();
@@ -10,14 +11,8 @@ export const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <Activity className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-heading text-xl font-bold text-foreground">My São João</span>
-              <span className="text-xs text-muted-foreground">Hospital de São João</span>
-            </div>
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <img src={mySaoJoaoLogo} alt="My São João" className="h-12 w-auto object-contain" />
           </Link>
 
           {user && (

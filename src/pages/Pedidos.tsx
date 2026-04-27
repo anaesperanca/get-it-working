@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { FileText, Calendar, AlertCircle, CheckCircle2, Upload, Plus, Building2, Clock } from 'lucide-react';
+import { FileText, Calendar, AlertCircle, CheckCircle2, Upload, Plus, Building2, Clock, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Pedidos() {
@@ -130,6 +130,18 @@ export default function Pedidos() {
     setIsScheduleModalOpen(false);
   };
 
+  const handleRenewRequest = (request: Request) => {
+    updatePedidoLocal(request.id, {
+      estado: 'por_fazer',
+      prazoISO: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+      agendamento: undefined,
+      dataRealizacao: undefined,
+      anexos: [],
+    });
+    refreshRequests();
+    toast.success(`Pedido de renovação enviado para ${request.nome}. Novo prazo atribuído.`);
+  };
+
   const handleCreateRequest = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -242,6 +254,15 @@ export default function Pedidos() {
                   Agendado
                 </Button>
               )}
+            </div>
+          )}
+
+          {request.estado === 'expirado' && (
+            <div className="flex gap-2 mt-4 pt-3 border-t">
+              <Button size="sm" variant="outline" onClick={() => handleRenewRequest(request)}>
+                <RotateCw className="h-4 w-4 mr-1" />
+                Pedir renovação
+              </Button>
             </div>
           )}
         </CardContent>

@@ -4,8 +4,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, User, Lock } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import mySaoJoaoLogo from '@/assets/my-sao-joao-logo.png';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -49,12 +50,10 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-              <Activity className="h-9 w-9 text-primary-foreground" />
-            </div>
+            <img src={mySaoJoaoLogo} alt="My São João" className="h-28 w-auto object-contain" />
           </div>
           <div>
-            <CardTitle className="text-3xl font-heading">My São João</CardTitle>
+            <CardTitle className="text-3xl font-heading sr-only">My São João</CardTitle>
             <CardDescription className="text-base mt-2">
               Aceda à sua área reservada
             </CardDescription>
