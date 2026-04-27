@@ -41,12 +41,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('SNS24_SESSION');
+    const saved = localStorage.getItem('MY_SAO_JOAO_SESSION');
     if (saved) {
       try {
         setUser(JSON.parse(saved));
       } catch (e) {
-        localStorage.removeItem('SNS24_SESSION');
+        localStorage.removeItem('MY_SAO_JOAO_SESSION');
       }
     }
   }, []);
@@ -65,14 +65,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { pass, ...userData } = dbUser;
     setUser(userData);
-    localStorage.setItem('SNS24_SESSION', JSON.stringify(userData));
+    localStorage.setItem('MY_SAO_JOAO_SESSION', JSON.stringify(userData));
 
     return { ok: true };
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('SNS24_SESSION');
+    localStorage.removeItem('MY_SAO_JOAO_SESSION');
   };
 
   return (
