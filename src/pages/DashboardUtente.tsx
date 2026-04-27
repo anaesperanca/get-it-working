@@ -44,7 +44,7 @@ export default function DashboardUtente() {
               Olá, {user?.nome}
             </h1>
             <p className="text-muted-foreground mt-2">
-              Bem-vindo à sua área pessoal SNS 24
+              Bem-vindo à sua área pessoal My São João
             </p>
           </div>
 
