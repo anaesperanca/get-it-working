@@ -54,7 +54,7 @@ export default function Login() {
             </div>
           </div>
           <div>
-            <CardTitle className="text-3xl font-heading">SNS 24</CardTitle>
+            <CardTitle className="text-3xl font-heading">My São João</CardTitle>
             <CardDescription className="text-base mt-2">
               Aceda à sua área reservada
             </CardDescription>
