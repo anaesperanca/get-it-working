@@ -15,8 +15,8 @@ export const Header = () => {
               <Activity className="h-6 w-6 text-primary-foreground" />
             </div>
             <div className="flex flex-col">
-              <span className="font-heading text-xl font-bold text-foreground">SNS 24</span>
-              <span className="text-xs text-muted-foreground">Sistema Nacional de Saúde</span>
+              <span className="font-heading text-xl font-bold text-foreground">My São João</span>
+              <span className="text-xs text-muted-foreground">Hospital de São João</span>
             </div>
           </Link>
 
