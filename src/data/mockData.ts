@@ -19,12 +19,13 @@ export interface Request {
   tipo: 'analise' | 'exame';
   nome: string;
   descricao: string;
-  estado: 'por_fazer' | 'concluido' | 'expirado';
+  estado: 'por_fazer' | 'agendado' | 'concluido' | 'expirado';
   prazoISO: string;
   consultaAlvoId: string;
   fonte: string;
   anexos: string[];
   dataRealizacao?: string;
+  agendamento?: string;
 }
 
 export const DB_PATIENTS: Patient[] = [
@@ -114,5 +115,26 @@ export const DB_PEDIDOS: Request[] = [
   }
 ];
 
+const STORAGE_KEY = 'sns24_pedidos_state';
+
+export const getPedidos = (): Request[] => {
+  if (typeof window === 'undefined') return DB_PEDIDOS;
+
+  const saved = window.localStorage.getItem(STORAGE_KEY);
+  const overrides = saved ? JSON.parse(saved) as Record<string, Partial<Request>> : {};
+
+  return DB_PEDIDOS.map(request => ({ ...request, ...overrides[request.id] }));
+};
+
+export const updatePedidoLocal = (id: string, patch: Partial<Request>) => {
+  if (typeof window === 'undefined') return;
+
+  const saved = window.localStorage.getItem(STORAGE_KEY);
+  const overrides = saved ? JSON.parse(saved) as Record<string, Partial<Request>> : {};
+  overrides[id] = { ...overrides[id], ...patch };
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+  window.dispatchEvent(new CustomEvent('pedidos-updated'));
+};
+
 export const getPatientById = (id: string) => DB_PATIENTS.find(p => p.id === id);
-export const getRequestsByPatient = (patientId: string) => DB_PEDIDOS.filter(r => r.consultaAlvoId === patientId);
+export const getRequestsByPatient = (patientId: string) => getPedidos().filter(r => r.consultaAlvoId === patientId);
