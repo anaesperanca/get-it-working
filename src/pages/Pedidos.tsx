@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { FileText, Calendar, AlertCircle, CheckCircle2, Upload, Plus, Building2 } from 'lucide-react';
+import { FileText, Calendar, AlertCircle, CheckCircle2, Upload, Plus, Building2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Pedidos() {
@@ -19,9 +19,10 @@ export default function Pedidos() {
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
-  const [cidade, setCidade] = useState('');
+  const [distrito, setDistrito] = useState('');
   const [showLabs, setShowLabs] = useState(false);
   const [selectedLab, setSelectedLab] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState('');
   
   const userRequests = user?.patientId 
     ? DB_PEDIDOS.filter(p => p.consultaAlvoId === user.patientId)
@@ -33,12 +34,33 @@ export default function Pedidos() {
   const completed = userRequests.filter(r => r.estado === 'concluido');
   const expired = userRequests.filter(r => r.estado === 'expirado');
 
-  // Mock labs data
-  const labs = [
-    { id: '1', nome: 'Germano de Sousa', endereco: 'Av. da Liberdade, 123', url: 'https://www.germanodesousa.com' },
-    { id: '2', nome: 'Synlab', endereco: 'Rua do Comércio, 45', url: 'https://www.synlab.pt' },
-    { id: '3', nome: 'Joaquim Chaves Saúde', endereco: 'Praça de Espanha, 78', url: 'https://www.jcs.pt' }
+  const distritosPortugal = [
+    'Aveiro', 'Beja', 'Braga', 'Bragança', 'Castelo Branco', 'Coimbra', 'Évora', 'Faro', 'Guarda',
+    'Leiria', 'Lisboa', 'Portalegre', 'Porto', 'Santarém', 'Setúbal', 'Viana do Castelo', 'Vila Real', 'Viseu'
   ];
+
+  const labs = [
+    { id: 'synlab', nome: 'Synlab', distrito: 'todos', endereco: 'Rede nacional Synlab', url: 'https://www.synlab.pt', api: true },
+    { id: 'gs-lisboa', nome: 'Germano de Sousa', distrito: 'Lisboa', endereco: 'Av. da Liberdade, 123', url: 'https://www.germanodesousa.com', api: false },
+    { id: 'jcs-lisboa', nome: 'Joaquim Chaves Saúde', distrito: 'Lisboa', endereco: 'Praça de Espanha, 78', url: 'https://www.jcs.pt', api: false },
+    { id: 'gs-porto', nome: 'Germano de Sousa', distrito: 'Porto', endereco: 'Rua de Sá da Bandeira, 210', url: 'https://www.germanodesousa.com', api: false },
+    { id: 'trofa-braga', nome: 'Trofa Saúde', distrito: 'Braga', endereco: 'Av. Central, 34', url: 'https://www.trofasaude.pt', api: false },
+    { id: 'cuf-coimbra', nome: 'CUF', distrito: 'Coimbra', endereco: 'Rua General Humberto Delgado, 12', url: 'https://www.cuf.pt', api: false },
+    { id: 'lus-setubal', nome: 'Lusíadas Saúde', distrito: 'Setúbal', endereco: 'Av. Luísa Todi, 91', url: 'https://www.lusiadas.pt', api: false },
+    { id: 'hpa-faro', nome: 'HPA Saúde', distrito: 'Faro', endereco: 'Estrada de Alvor, 8500', url: 'https://www.grupohpa.com', api: false },
+  ];
+
+  const availableLabs = distrito
+    ? labs.filter(lab => lab.distrito === distrito || lab.id === 'synlab')
+    : [];
+
+  const synlabAgenda = distrito
+    ? [
+        { id: `${distrito}-manha`, label: 'Amanhã', hora: '09:20', local: `Synlab ${distrito} Centro` },
+        { id: `${distrito}-tarde`, label: 'Amanhã', hora: '15:40', local: `Synlab ${distrito} Norte` },
+        { id: `${distrito}-semana`, label: 'Daqui a 2 dias', hora: '11:10', local: `Synlab ${distrito} Sul` },
+      ]
+    : [];
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>, requestId?: string) => {
     const file = e.target.files?.[0];
@@ -50,17 +72,21 @@ export default function Pedidos() {
   const handleSchedule = (request: Request) => {
     setSelectedRequest(request);
     setIsScheduleModalOpen(true);
-    setCidade('');
+    setDistrito('');
     setShowLabs(false);
     setSelectedLab('');
+    setSelectedSlot('');
   };
 
   const procurarLabs = () => {
-    if (!cidade.trim()) {
-      toast.error('Por favor, insira uma cidade');
+    if (!distrito) {
+      toast.error('Por favor, selecione um distrito');
       return;
     }
     setShowLabs(true);
+    setSelectedLab('synlab');
+    setSelectedSlot(synlabAgenda[0]?.id || '');
+    toast.success('Agenda Synlab consultada com sucesso');
   };
 
   const confirmarAgendamento = () => {
@@ -68,9 +94,17 @@ export default function Pedidos() {
       toast.error('Por favor, selecione um laboratório');
       return;
     }
+    if (selectedLab === 'synlab' && !selectedSlot) {
+      toast.error('Por favor, selecione uma vaga da Synlab');
+      return;
+    }
     const lab = labs.find(l => l.id === selectedLab);
-    toast.success(`Agendamento confirmado em ${lab?.nome}!`);
-    window.open(lab?.url, '_blank');
+    const slot = synlabAgenda.find(s => s.id === selectedSlot);
+    toast.success(
+      selectedLab === 'synlab'
+        ? `Agendamento Synlab confirmado: ${slot?.label} às ${slot?.hora}`
+        : `Agendamento confirmado em ${lab?.nome}!`
+    );
     setIsScheduleModalOpen(false);
   };
 
