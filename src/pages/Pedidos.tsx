@@ -143,6 +143,11 @@ export default function Pedidos() {
   };
 
   const handleDownloadDocument = (request: Request) => {
+    if (!request.anexos.length) {
+      toast.error('Não existe documento submetido para download.');
+      return;
+    }
+
     const submittedFile = request.anexos[0] || `${request.nome.replace(/\s+/g, '_').toLowerCase()}_resultado.pdf`;
     const content = `My São João\n\nDocumento submetido\nExame: ${request.nome}\nData: ${new Date(request.dataRealizacao || Date.now()).toLocaleDateString('pt-PT')}\nFicheiro original: ${submittedFile}\n`;
     const blob = new Blob([content], { type: 'application/pdf' });
@@ -194,6 +199,7 @@ export default function Pedidos() {
 
   const RequestCard = ({ request }: { request: Request }) => {
     const patient = getPatientById(request.consultaAlvoId);
+    const hasSubmittedDocument = request.anexos.length > 0;
     
     return (
       <Card className="hover:shadow-md transition-shadow">
@@ -279,7 +285,7 @@ export default function Pedidos() {
             </div>
           )}
 
-          {request.estado === 'concluido' && (
+          {request.estado === 'concluido' && hasSubmittedDocument && (
             <div className="flex gap-2 mt-4 pt-3 border-t">
               <Button size="sm" variant="outline" onClick={() => handleDownloadDocument(request)}>
                 <Download className="h-4 w-4 mr-1" />
