@@ -110,12 +110,12 @@ export const DB_PEDIDOS: Request[] = [
     prazoISO: addDays(-10),
     consultaAlvoId: "c123",
     fonte: "medico",
-    anexos: [],
+    anexos: ["resultado_tsh_t4_livre.pdf"],
     dataRealizacao: addDays(-12)
   }
 ];
 
-const STORAGE_KEY = 'my_sao_joao_pedidos_state';
+const STORAGE_KEY = 'my_sao_joao_pedidos_state_v2';
 
 export const getPedidos = (): Request[] => {
   if (typeof window === 'undefined') return DB_PEDIDOS;
